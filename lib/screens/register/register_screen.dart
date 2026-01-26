@@ -18,7 +18,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (emailController.text.trim().isEmpty ||
         fullNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter full name and email')),
+        const SnackBar(
+          content: Text('Please enter full name and email'),
+        ),
       );
       return;
     }

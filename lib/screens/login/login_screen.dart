@@ -15,36 +15,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool isLoading = false;
 
-  Future<void> _login() async {
-    if (emailController.text.trim().isEmpty ||
-        passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
-      );
-      return;
-    }
+Future<void> _login() async {
+  setState(() => isLoading = true);
 
-    setState(() => isLoading = true);
+  try {
+    final result = await AuthService.login(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
 
-    try {
-      final token = await AuthService.login(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
+    final String token = result['token'];
+    final Map<String, dynamic> user = result['user'];
 
-      debugPrint('LOGIN TOKEN: $token');
+    debugPrint('TOKEN: $token');
+    debugPrint('USER: ${user['email']}');
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid email or password')),
-      );
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
+    Navigator.pushReplacementNamed(context, '/dashboard');
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Invalid email or password')),
+    );
+  } finally {
+    if (mounted) setState(() => isLoading = false);
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

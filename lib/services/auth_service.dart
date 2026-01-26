@@ -2,34 +2,40 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl = 'https://10.0.2.2:7070/api';
+static const String baseUrl =
+  'http://10.0.2.2:5004/api';
+
 
   static String? _token;
 
   // ================= LOGIN =================
-  static Future<String> login({
-    required String email,
-    required String password,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-    );
+ static Future<Map<String, dynamic>> login({
+  required String email,
+  required String password,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/auth/login'),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'email': email,
+      'password': password,
+    }),
+  );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      _token = data['token'];
-      return _token!;
-    } else {
-      throw Exception('Login failed: ${response.body}');
-    }
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+
+    // lưu token nếu muốn dùng sau
+    _token = data['token'];
+
+    return data;
+  } else {
+    throw Exception('Login failed');
   }
+}
+
 
   // ================= REGISTER =================
   static Future<void> register({
