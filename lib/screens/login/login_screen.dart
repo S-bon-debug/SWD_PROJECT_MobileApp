@@ -1,7 +1,50 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  bool isLoading = false;
+
+  Future<void> _login() async {
+    if (emailController.text.trim().isEmpty ||
+        passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final token = await AuthService.login(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      debugPrint('LOGIN TOKEN: $token');
+
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid email or password')),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,18 +53,15 @@ class LoginScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 390),
+            constraints: const BoxConstraints(maxWidth: 380),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.hub,
-                    size: 72,
-                    color: Colors.white,
-                  ),
+                  const Icon(Icons.hub, size: 72, color: Colors.white),
+
                   const SizedBox(height: 20),
 
                   const Text(
@@ -35,7 +75,7 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
                   const Text(
                     'Welcome back, please login to your account.',
@@ -47,24 +87,25 @@ class LoginScreen extends StatelessWidget {
 
                   _inputField(
                     label: 'EMAIL',
-                    icon: Icons.person,
-                    hint: 'user@iot-admin.com',
+                    icon: Icons.email,
+                    controller: emailController,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
                   _inputField(
                     label: 'PASSWORD',
                     icon: Icons.lock,
-                    hint: '********',
+                    controller: passwordController,
                     isPassword: true,
                   ),
 
                   const SizedBox(height: 30),
 
                   SizedBox(
-                    height: 50,
+                    height: 48,
                     child: ElevatedButton(
+                      onPressed: isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
@@ -72,14 +113,12 @@ class LoginScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(
-                            context, '/dashboard');
-                      },
-                      child: const Text(
-                        'LOGIN',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      child: isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text(
+                              'LOGIN',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
 
@@ -112,23 +151,19 @@ class LoginScreen extends StatelessWidget {
   Widget _inputField({
     required String label,
     required IconData icon,
-    required String hint,
+    required TextEditingController controller,
     bool isPassword = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white),
-        ),
+        Text(label, style: const TextStyle(color: Colors.white)),
         const SizedBox(height: 6),
         TextField(
+          controller: controller,
           obscureText: isPassword,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: Colors.grey),
             prefixIcon: Icon(icon, color: Colors.grey),
             filled: true,
             fillColor: Colors.black,
