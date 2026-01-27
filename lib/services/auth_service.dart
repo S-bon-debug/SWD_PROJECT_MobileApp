@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-static const String baseUrl =
-  'http://10.0.2.2:5004/api';
+  static const String baseUrl =
+    'https://10.0.2.2:7070/api';
 
 
   static String? _token;
@@ -22,7 +22,7 @@ static const String baseUrl =
       'email': email,
       'password': password,
     }),
-  );
+  ).timeout(const Duration(seconds: 10));
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -32,7 +32,7 @@ static const String baseUrl =
 
     return data;
   } else {
-    throw Exception('Login failed');
+    throw Exception('Login failed: ${response.statusCode} - ${response.body}');
   }
 }
 
@@ -54,7 +54,7 @@ static const String baseUrl =
         'email': email,
         'roleId': 1,
       }),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     if (response.statusCode != 200) {
       throw Exception('Register failed: ${response.body}');

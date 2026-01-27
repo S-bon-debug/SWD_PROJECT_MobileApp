@@ -11,8 +11,20 @@ import 'screens/hubs/hubs_screen.dart';
 import 'screens/sensors/sensors_screen.dart';
 import 'screens/alerts/alerts_screen.dart';
 
+import 'dart:io';
+
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
+}
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
 }
 
 class MyApp extends StatelessWidget {

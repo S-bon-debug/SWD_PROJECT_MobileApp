@@ -1,5 +1,6 @@
 // lib/screens/sites/sites_screen.dart
 import 'package:flutter/material.dart';
+import 'add_site_dialog.dart';
 
 class SitesScreen extends StatefulWidget {
   const SitesScreen({super.key});

@@ -110,24 +110,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ================= HEADER =================
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-          Text(
-            'System Status',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+        const Text(
+          'System Status',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
           ),
-          SizedBox(height: 4),
-          Text(
-            'Real-time metrics from active locations',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ]),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Real-time metrics from active locations',
+          style: TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 16),
         Row(
           children: [
             _ActionButton(

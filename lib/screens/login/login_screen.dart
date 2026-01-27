@@ -35,7 +35,7 @@ Future<void> _login() async {
     Navigator.pushReplacementNamed(context, '/dashboard');
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Invalid email or password')),
+      SnackBar(content: Text('Error: $e')),
     );
   } finally {
     if (mounted) setState(() => isLoading = false);
