@@ -25,7 +25,6 @@ class _HubsScreenState extends State<HubsScreen> {
   void _openAddHubDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (_) => AddHubDialog(
         onSubmit: (hub) {
           setState(() => hubs.add(hub));
@@ -37,170 +36,157 @@ class _HubsScreenState extends State<HubsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: const Color(0xFF0B0B0B),
 
+      /// ===== MENU =====
+      drawer: _buildDrawer(context),
+
+      /// ===== APP BAR =====
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
         title: const Text(
-          'IoT Hubs Management',
+          'Hubs Management',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
 
+      /// ===== BODY =====
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// ===== HEADER (GIỐNG ẢNH WEB) =====
+            /// HEADER
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Hubs Management',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Hubs Management',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Configure and monitor gateway devices.',
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 13,
+                      SizedBox(height: 6),
+                      Text(
+                        'Configure and monitor gateway devices.',
+                        style: TextStyle(color: Colors.white70),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-
-                /// ✅ ADD BUTTON – GÓC PHẢI PHÍA TRÊN
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _openAddHubDialog,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text(
-                    'ADD NEW HUB',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('ADD HUB'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
 
-            /// ===== TABLE HEADER =====
-            Container(
-              padding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 16,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                border: Border.all(color: Colors.white12),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Row(
-                children: [
-                  Expanded(flex: 3, child: Text('HUB ID')),
-                  Expanded(flex: 3, child: Text('SITE NAME')),
-                  Expanded(flex: 3, child: Text('STATUS')),
-                  Expanded(flex: 1, child: SizedBox()),
-                ],
-              ),
-            ),
-
-            /// ===== TABLE ROWS =====
+            /// LIST
             Expanded(
-              child: ListView.separated(
+              child: ListView.builder(
                 itemCount: hubs.length,
-                separatorBuilder: (_, __) =>
-                    Divider(color: Colors.white12, height: 1),
-                itemBuilder: (_, index) {
+                itemBuilder: (context, index) {
                   final hub = hubs[index];
-                  final isOnline = hub['online'];
+                  final bool online = hub['online'];
 
                   return Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.03),
-                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white12),
                     ),
                     child: Row(
                       children: [
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            hub['hubId'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                        /// ICON
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: online
+                                ? Colors.green.withOpacity(0.15)
+                                : Colors.red.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.router,
+                            color:
+                                online ? Colors.greenAccent : Colors.redAccent,
                           ),
                         ),
+                        const SizedBox(width: 14),
+
+                        /// INFO
                         Expanded(
-                          flex: 3,
-                          child: Text(
-                            hub['site'],
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color:
-                                      isOnline ? Colors.green : Colors.red,
-                                  shape: BoxShape.circle,
+                              Text(
+                                hub['hubId'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(height: 4),
                               Text(
-                                isOnline ? 'ONLINE' : 'OFFLINE',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isOnline
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
+                                hub['site'],
+                                style:
+                                    const TextStyle(color: Colors.white70),
                               ),
                             ],
                           ),
                         ),
-                        const Expanded(
-                          flex: 1,
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Icon(
-                              Icons.more_vert,
-                              color: Colors.white54,
+
+                        /// STATUS
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.circle,
+                              size: 10,
+                              color: online ? Colors.green : Colors.red,
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            Text(
+                              online ? 'ONLINE' : 'OFFLINE',
+                              style: TextStyle(
+                                color: online
+                                    ? Colors.green
+                                    : Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
+
+                        const SizedBox(width: 8),
+
+                        /// MORE
+                        const Icon(Icons.more_vert, color: Colors.white38),
                       ],
                     ),
                   );
@@ -210,6 +196,56 @@ class _HubsScreenState extends State<HubsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// ===== DRAWER =====
+  Drawer _buildDrawer(BuildContext context) {
+    return Drawer(
+      backgroundColor: const Color(0xFF0E0E0E),
+      child: Column(
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Color(0xFF141414)),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                'SMART STORE\nIoT Monitoring',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          _drawerItem(Icons.dashboard, 'Dashboard', '/dashboard', context),
+          _drawerItem(Icons.store, 'Sites', '/sites', context),
+          _drawerItem(Icons.router, 'Hubs', '/hubs', context),
+          _drawerItem(Icons.sensors, 'Sensors', '/sensors', context),
+          _drawerItem(Icons.warning, 'Alerts', '/alerts', context),
+
+          const Spacer(),
+
+          _drawerItem(Icons.logout, 'Logout', '/login', context),
+        ],
+      ),
+    );
+  }
+
+  ListTile _drawerItem(
+    IconData icon,
+    String title,
+    String route,
+    BuildContext context,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, route);
+      },
     );
   }
 }

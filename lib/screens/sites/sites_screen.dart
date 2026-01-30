@@ -16,14 +16,14 @@ class _SitesScreenState extends State<SitesScreen> {
       'address': '123 Xuân Thủy, Hà Nội',
     },
     {
-      'id': 'S-1769762020618',
-      'name': 'a',
-      'address': 'a',
+      'id': 'S-CG-002',
+      'name': 'WinMart Trung Kính',
+      'address': '456 Trung Kính, Hà Nội',
     },
     {
-      'id': 'S-1769762040698',
-      'name': 'ab',
-      'address': 'cd',
+      'id': 'S-CG-003',
+      'name': 'WinMart Mỹ Đình',
+      'address': '789 Mỹ Đình, Hà Nội',
     },
   ];
 
@@ -53,8 +53,20 @@ class _SitesScreenState extends State<SitesScreen> {
         ),
       ),
 
-      /// ✅ DRAWER – CHUYỂN HƯỚNG THẬT
+      /// ===== DRAWER =====
       drawer: _buildDrawer(context),
+
+      /// ✅ FAB ĐÚNG CHUẨN – NỔI GÓC PHẢI
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddSiteDialog,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Add Site',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
 
       /// ===== BODY =====
       body: Padding(
@@ -72,6 +84,7 @@ class _SitesScreenState extends State<SitesScreen> {
             ),
             const SizedBox(height: 16),
 
+            /// ===== LIST =====
             Expanded(
               child: ListView.builder(
                 itemCount: sites.length,
@@ -88,7 +101,7 @@ class _SitesScreenState extends State<SitesScreen> {
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                        vertical: 8,
+                        vertical: 10,
                       ),
                       leading: Container(
                         width: 44,
@@ -117,6 +130,7 @@ class _SitesScreenState extends State<SitesScreen> {
                             site['address']!,
                             style: const TextStyle(color: Colors.white70),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             site['id']!,
                             style: const TextStyle(
@@ -130,24 +144,15 @@ class _SitesScreenState extends State<SitesScreen> {
                         Icons.chevron_right,
                         color: Colors.white38,
                       ),
+                      onTap: () {
+                        // sau này mở Site Detail
+                      },
                     ),
                   );
                 },
               ),
             ),
           ],
-        ),
-      ),
-
-      /// ===== FAB =====
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddSiteDialog,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        icon: const Icon(Icons.add),
-        label: const Text(
-          'Add Site',
-          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -209,7 +214,7 @@ class _SitesScreenState extends State<SitesScreen> {
         ),
       ),
       onTap: () {
-        Navigator.pop(context); // đóng drawer
+        Navigator.pop(context);
         if (!active) {
           Navigator.pushReplacementNamed(context, route);
         }

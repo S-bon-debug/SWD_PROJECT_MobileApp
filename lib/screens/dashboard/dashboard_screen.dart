@@ -1,147 +1,226 @@
 import 'package:flutter/material.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
-
-  @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  bool isLoading = false;
-
-  void _refreshData() async {
-    setState(() => isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => isLoading = false);
-  }
-
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Export started')),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
-
-      /// 🔥 SIDE MENU
       drawer: _buildDrawer(context),
-
-      appBar: _buildAppBar(),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 24),
-
-                  GridView.count(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: const [
-                      _StatCard(
-                        title: 'TOTAL SITES',
-                        value: '24',
-                        icon: Icons.store,
-                      ),
-                      _StatCard(
-                        title: 'ACTIVE ALERTS',
-                        value: '03',
-                        icon: Icons.warning,
-                        color: Colors.red,
-                      ),
-                      _StatCard(
-                        title: 'HUBS ONLINE',
-                        value: '18 / 20',
-                        icon: Icons.router,
-                        color: Colors.lightBlueAccent,
-                      ),
-                      _StatCard(
-                        title: 'TOTAL SENSORS',
-                        value: '142',
-                        icon: Icons.sensors,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-                  _buildTrends(),
-                  const SizedBox(height: 32),
-                  _buildPriorityAlerts(),
-                ],
-              ),
-            ),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0E0E0E),
+        elevation: 0,
+        title: const Text(
+          'Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _header(),
+            const SizedBox(height: 24),
+            _statsGrid(),
+            const SizedBox(height: 32),
+            _environmentChart(),
+            const SizedBox(height: 32),
+            _priorityAlerts(context),
+          ],
+        ),
+      ),
     );
   }
 
-  // ================= APP BAR =================
+  // ================= HEADER =================
+  Widget _header() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [
+        Text(
+          'Environment Overview / Sensors Activity',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 6),
+        Text(
+          'Real-time metrics from active locations',
+          style: TextStyle(color: Colors.white70),
+        ),
+      ],
+    );
+  }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: const Color(0xFF0E0E0E),
-      elevation: 0,
-      title: const Text('Dashboard'),
+  // ================= STATS =================
+  Widget _statsGrid() {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      children: const [
+        _StatCard(title: 'TOTAL SITES', value: '24'),
+        _StatCard(title: 'ACTIVE ALERTS', value: '03', color: Colors.red),
+        _StatCard(title: 'HUBS ONLINE', value: '18 / 20', color: Colors.blue),
+        _StatCard(title: 'TOTAL SENSORS', value: '142'),
+      ],
+    );
+  }
+
+  // ================= CHART =================
+  Widget _environmentChart() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: _card(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'Environmental Trends',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 20),
+          SizedBox(
+            height: 180,
+            child: Center(
+              child: Text(
+                '📈 Line Chart (Mock)',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= PRIORITY ALERTS =================
+  Widget _priorityAlerts(BuildContext context) {
+    return Container(
+      decoration: _card(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Text(
+                'Priority Alerts',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/alerts'),
+                child: const Text('View All'),
+              )
+            ],
+          ),
+          const Divider(color: Colors.white12),
+          _alertRow(
+            sensor: 'Storage Temp (Critical)',
+            value: '42.8°C',
+            color: Colors.red,
+            status: 'CRITICAL',
+          ),
+          _alertRow(
+            sensor: 'Freezer A2 Humidity',
+            value: '78.2%',
+            color: Colors.orange,
+            status: 'WARNING',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _alertRow({
+    required String sensor,
+    required String value,
+    required String status,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              sensor,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: color),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   // ================= DRAWER =================
-
   Drawer _buildDrawer(BuildContext context) {
     return Drawer(
       backgroundColor: const Color(0xFF0E0E0E),
-      child: Column(
+      child: ListView(
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(color: Color(0xFF141414)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                CircleAvatar(radius: 22, child: Icon(Icons.person)),
-                SizedBox(height: 12),
-                Text(
-                  'SMART STORE',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                Text(
-                  'IoT Monitoring',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
+          const DrawerHeader(
+            child: Text(
+              'SMART STORE\nIoT Monitoring',
+              style: TextStyle(color: Colors.white),
             ),
           ),
-
-          _drawerItem(Icons.dashboard, 'Dashboard', '/dashboard', context),
-          _drawerItem(Icons.store, 'Sites', '/sites', context),
-          _drawerItem(Icons.router, 'Hubs', '/hubs', context),
-          _drawerItem(Icons.sensors, 'Sensors', '/sensors', context),
-          _drawerItem(Icons.warning, 'Alerts', '/alerts', context),
-
-          const Spacer(),
-
-          _drawerItem(Icons.logout, 'Logout', '/login', context),
+          _drawerItem(context, 'Dashboard', '/dashboard'),
+          _drawerItem(context, 'Sites', '/sites'),
+          _drawerItem(context, 'Hubs', '/hubs'),
+          _drawerItem(context, 'Sensors', '/sensors'),
+          _drawerItem(context, 'Alerts', '/alerts'),
         ],
       ),
     );
   }
 
   ListTile _drawerItem(
-    IconData icon,
-    String title,
-    String route,
-    BuildContext context,
-  ) {
+      BuildContext context, String title, String route) {
     return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      title:
+          Text(title, style: const TextStyle(color: Colors.white)),
       onTap: () {
         Navigator.pop(context);
         Navigator.pushReplacementNamed(context, route);
@@ -149,102 +228,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ================= HEADER =================
-
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'System Status',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Real-time metrics from active locations',
-          style: TextStyle(color: Colors.grey),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            _ActionButton(
-              icon: Icons.download,
-              label: 'Export',
-              onTap: _exportData,
-              bg: const Color(0xFF1F1F1F),
-            ),
-            const SizedBox(width: 12),
-            _ActionButton(
-              icon: Icons.refresh,
-              label: 'Refresh',
-              onTap: _refreshData,
-              bg: Colors.blueAccent,
-            ),
-          ],
-        )
-      ],
-    );
-  }
-
-  Widget _buildTrends() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: _cardStyle(),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Environmental Trends',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 16),
-          SizedBox(
-            height: 180,
-            child: Center(
-              child: Text('📈 Line Chart (mock)',
-                  style: TextStyle(color: Colors.grey)),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriorityAlerts() {
-    return Container(
-      decoration: _cardStyle(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: const [
-          Text('Priority Alerts', style: TextStyle(color: Colors.white)),
-        ],
-      ),
-    );
-  }
-
-  BoxDecoration _cardStyle() => BoxDecoration(
+  BoxDecoration _card() => BoxDecoration(
         color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFF262626)),
       );
 }
 
-// ================= COMPONENTS =================
-
+// ================= STAT CARD =================
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;
-  final IconData icon;
   final Color color;
 
   const _StatCard({
     required this.title,
     required this.value,
-    required this.icon,
     this.color = Colors.white,
   });
 
@@ -260,15 +259,9 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title,
-                  style:
-                      const TextStyle(color: Colors.grey, fontSize: 12)),
-              Icon(icon, color: color),
-            ],
-          ),
+          Text(title,
+              style: const TextStyle(
+                  color: Colors.white70, fontSize: 12)),
           const Spacer(),
           Text(
             value,
@@ -280,30 +273,6 @@ class _StatCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color bg;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.bg,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(backgroundColor: bg),
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      onPressed: onTap,
     );
   }
 }

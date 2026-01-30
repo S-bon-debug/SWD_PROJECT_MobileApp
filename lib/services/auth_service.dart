@@ -2,12 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  // static const String baseUrl =
-  //   'https://10.0.2.2:7070/api';
-  
+
 static const String baseUrl =
   'https://swd-project-api.onrender.com/api';
-
 
   static String? _token;
 
@@ -38,7 +35,6 @@ static const String baseUrl =
     throw Exception('Login failed: ${response.statusCode} - ${response.body}');
   }
 }
-
 
   // ================= REGISTER =================
   static Future<void> register({
