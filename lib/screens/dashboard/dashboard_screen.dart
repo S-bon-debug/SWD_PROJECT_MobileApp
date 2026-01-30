@@ -8,14 +8,24 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       drawer: _buildDrawer(context),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0E0E0E),
-        elevation: 0,
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+appBar: AppBar(
+  backgroundColor: const Color(0xFF0E0E0E),
+  elevation: 0,
+  iconTheme: const IconThemeData(
+    color: Colors.white,
+    size: 26,
+  ),
+  title: const Text(
+    'Dashboard',
+    style: TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w700,
+      fontSize: 20,
+      letterSpacing: 0.5,
+    ),
+  ),
+),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
