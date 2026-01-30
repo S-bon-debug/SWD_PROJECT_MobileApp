@@ -26,6 +26,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
+
+      /// 🔥 SIDE MENU
+      drawer: _buildDrawer(context),
+
       appBar: _buildAppBar(),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -37,7 +41,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildHeader(),
                   const SizedBox(height: 24),
 
-                  /// STAT GRID
                   GridView.count(
                     crossAxisCount: 2,
                     mainAxisSpacing: 16,
@@ -86,24 +89,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AppBar(
       backgroundColor: const Color(0xFF0E0E0E),
       elevation: 0,
-      title: Row(
-        children: const [
-          CircleAvatar(radius: 14, child: Icon(Icons.person, size: 16)),
-          SizedBox(width: 8),
-          Text('Alexander Pierce', style: TextStyle(fontSize: 14)),
+      title: const Text('Dashboard'),
+    );
+  }
+
+  // ================= DRAWER =================
+
+  Drawer _buildDrawer(BuildContext context) {
+    return Drawer(
+      backgroundColor: const Color(0xFF0E0E0E),
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Color(0xFF141414)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                CircleAvatar(radius: 22, child: Icon(Icons.person)),
+                SizedBox(height: 12),
+                Text(
+                  'SMART STORE',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Text(
+                  'IoT Monitoring',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+          _drawerItem(Icons.dashboard, 'Dashboard', '/dashboard', context),
+          _drawerItem(Icons.store, 'Sites', '/sites', context),
+          _drawerItem(Icons.router, 'Hubs', '/hubs', context),
+          _drawerItem(Icons.sensors, 'Sensors', '/sensors', context),
+          _drawerItem(Icons.warning, 'Alerts', '/alerts', context),
+
+          const Spacer(),
+
+          _drawerItem(Icons.logout, 'Logout', '/login', context),
         ],
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/login',
-              (_) => false,
-            );
-          },
-        )
-      ],
+    );
+  }
+
+  ListTile _drawerItem(
+    IconData icon,
+    String title,
+    String route,
+    BuildContext context,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, route);
+      },
     );
   }
 
@@ -148,31 +190,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ================= TRENDS =================
-
   Widget _buildTrends() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: _cardStyle(),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text(
             'Environmental Trends',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 16),
           SizedBox(
             height: 180,
             child: Center(
-              child: Text(
-                '📈 Line Chart (mock)',
-                style: TextStyle(color: Colors.grey),
-              ),
+              child: Text('📈 Line Chart (mock)',
+                  style: TextStyle(color: Colors.grey)),
             ),
           )
         ],
@@ -180,62 +214,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ================= ALERTS =================
-
   Widget _buildPriorityAlerts() {
     return Container(
       decoration: _cardStyle(),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey)),
-            ),
-            child: Row(
-              children: const [
-                Expanded(child: Text('Sensor', style: _thStyle)),
-                Expanded(child: Text('Value', style: _thStyle)),
-                Expanded(child: Text('Status', style: _thStyle)),
-              ],
-            ),
-          ),
-          _alertRow(
-            'Storage Temp',
-            '42.8°C',
-            'CRITICAL',
-            Colors.red,
-          ),
-          _alertRow(
-            'Freezer A2 Humidity',
-            '78.2%',
-            'WARNING',
-            Colors.orange,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _alertRow(
-    String name,
-    String value,
-    String status,
-    Color color,
-  ) {
-    return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-              child: Text(name, style: const TextStyle(color: Colors.white))),
-          Expanded(
-              child: Text(value,
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold))),
-          Expanded(
-              child: Text(status,
-                  style: TextStyle(
-                      color: color, fontWeight: FontWeight.bold))),
+      child: Column(
+        children: const [
+          Text('Priority Alerts', style: TextStyle(color: Colors.white)),
         ],
       ),
     );
@@ -322,9 +307,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-
-const _thStyle = TextStyle(
-  color: Colors.grey,
-  fontSize: 12,
-  fontWeight: FontWeight.bold,
-);

@@ -1,4 +1,3 @@
-// lib/screens/sites/add_site_dialog.dart
 import 'package:flutter/material.dart';
 
 class AddSiteDialog extends StatefulWidget {
@@ -11,12 +10,11 @@ class AddSiteDialog extends StatefulWidget {
 }
 
 class _AddSiteDialogState extends State<AddSiteDialog> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
+  final nameController = TextEditingController();
+  final addressController = TextEditingController();
 
   void _submit() {
-    if (nameController.text.isEmpty ||
-        addressController.text.isEmpty) return;
+    if (nameController.text.isEmpty || addressController.text.isEmpty) return;
 
     widget.onSubmit({
       'id': 'S-${DateTime.now().millisecondsSinceEpoch}',
@@ -27,102 +25,112 @@ class _AddSiteDialogState extends State<AddSiteDialog> {
     Navigator.pop(context);
   }
 
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white38),
+      enabledBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.white30),
+      ),
+      focusedBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.white),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: const Color(0xFF0B0B0B),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.white12),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: SizedBox(
-        width: 420,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'ADD NEW SITE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
+            /// HEADER
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'ADD NEW SITE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  )
-                ],
-              ),
-            ),
-            Divider(color: Colors.white12),
-
-            /// Form
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('SITE NAME',
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white70)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. WinMart Cầu Giấy',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('ADDRESS',
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white70)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: addressController,
-                    decoration: const InputDecoration(
-                      hintText: 'Full street address',
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white54),
+                  onPressed: () => Navigator.pop(context),
+                )
+              ],
             ),
 
-            Divider(color: Colors.white12),
+            const SizedBox(height: 20),
 
-            /// Actions
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('CANCEL'),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                    ),
-                    child: const Text(
-                      'ADD SITE',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  )
-                ],
+            /// SITE NAME
+            const Text(
+              'SITE NAME',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+            TextField(
+              controller: nameController,
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+              decoration: _inputDecoration('e.g. WinMart Cầu Giấy'),
+            ),
+
+            const SizedBox(height: 16),
+
+            /// ADDRESS
+            const Text(
+              'ADDRESS',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextField(
+              controller: addressController,
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+              decoration: _inputDecoration('Full street address'),
+            ),
+
+            const SizedBox(height: 24),
+
+            /// ACTIONS
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'CANCEL',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                  ),
+                  child: const Text(
+                    'ADD SITE',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             )
           ],
         ),

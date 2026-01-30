@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 // Auth
 import 'screens/login/login_screen.dart';
@@ -10,8 +11,6 @@ import 'screens/sites/sites_screen.dart';
 import 'screens/hubs/hubs_screen.dart';
 import 'screens/sensors/sensors_screen.dart';
 import 'screens/alerts/alerts_screen.dart';
-
-import 'dart:io';
 
 void main() {
   HttpOverrides.global = MyHttpOverrides();
@@ -34,16 +33,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-
-      // 🔥 APP BẮT ĐẦU Ở LOGIN
       initialRoute: '/login',
-
       routes: {
-        // ===== AUTH =====
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-
-        // ===== MAIN APP =====
         '/dashboard': (context) => const DashboardScreen(),
         '/sites': (context) => const SitesScreen(),
         '/hubs': (context) => const HubsScreen(),

@@ -28,9 +28,7 @@ class _HubsScreenState extends State<HubsScreen> {
       barrierDismissible: false,
       builder: (_) => AddHubDialog(
         onSubmit: (hub) {
-          setState(() {
-            hubs.add(hub);
-          });
+          setState(() => hubs.add(hub));
         },
       ),
     );
@@ -40,62 +38,83 @@ class _HubsScreenState extends State<HubsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
+
       appBar: AppBar(
         backgroundColor: Colors.black,
+        elevation: 0,
         title: const Text(
           'IoT Hubs Management',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Header
+            /// ===== HEADER (GIỐNG ẢNH WEB) =====
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
                       'Hubs Management',
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                    SizedBox(height: 4),
+                    SizedBox(height: 6),
                     Text(
                       'Configure and monitor gateway devices.',
-                      style: TextStyle(color: Colors.white60),
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
+
+                /// ✅ ADD BUTTON – GÓC PHẢI PHÍA TRÊN
                 ElevatedButton.icon(
                   onPressed: _openAddHubDialog,
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text(
                     'ADD NEW HUB',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
 
-            /// Table Header
+            /// ===== TABLE HEADER =====
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                vertical: 12,
+                horizontal: 16,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 border: Border.all(color: Colors.white12),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: const Row(
                 children: [
@@ -107,7 +126,7 @@ class _HubsScreenState extends State<HubsScreen> {
               ),
             ),
 
-            /// Rows
+            /// ===== TABLE ROWS =====
             Expanded(
               child: ListView.separated(
                 itemCount: hubs.length,
@@ -119,21 +138,31 @@ class _HubsScreenState extends State<HubsScreen> {
 
                   return Container(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 16),
-                    color: Colors.white.withOpacity(0.03),
+                      vertical: 14,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.03),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                     child: Row(
                       children: [
                         Expanded(
                           flex: 3,
                           child: Text(
                             hub['hubId'],
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         Expanded(
                           flex: 3,
-                          child: Text(hub['site']),
+                          child: Text(
+                            hub['site'],
+                            style: const TextStyle(color: Colors.white70),
+                          ),
                         ),
                         Expanded(
                           flex: 3,
@@ -143,9 +172,8 @@ class _HubsScreenState extends State<HubsScreen> {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: isOnline
-                                      ? Colors.green
-                                      : Colors.red,
+                                  color:
+                                      isOnline ? Colors.green : Colors.red,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -167,8 +195,10 @@ class _HubsScreenState extends State<HubsScreen> {
                           flex: 1,
                           child: Align(
                             alignment: Alignment.centerRight,
-                            child: Icon(Icons.more_vert,
-                                color: Colors.white54),
+                            child: Icon(
+                              Icons.more_vert,
+                              color: Colors.white54,
+                            ),
                           ),
                         ),
                       ],
