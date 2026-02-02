@@ -6,11 +6,11 @@ class AlertsScreen extends StatelessWidget {
   Color _severityColor(String level) {
     switch (level) {
       case 'Critical':
-        return const Color(0xFFFF4D4F);
+        return Colors.redAccent;
       case 'Warning':
-        return const Color(0xFFFFC107);
+        return Colors.orangeAccent;
       default:
-        return const Color(0xFF4CAF50);
+        return Colors.greenAccent;
     }
   }
 
@@ -34,108 +34,90 @@ class AlertsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
 
-      /// ===== APP BAR =====
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A0A),
-        elevation: 0,
-        title: const Text(
-          'IoT Alert History',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
-
       /// ===== DRAWER =====
       drawer: _buildDrawer(context),
 
+      /// ===== APP BAR =====
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0E0E0E),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          'Alerts',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+
       /// ===== BODY =====
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// ===== HEADER =====
-            const Text(
-              'IoT Alert History Log',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'SYSTEM-WIDE CRITICAL AND WARNING EVENTS',
-              style: TextStyle(
-                color: Colors.white70, // 🔥 tăng độ rõ
-                fontSize: 11,
-                letterSpacing: 1,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            /// ===== ACTION BUTTONS (RIGHT ALIGN) =====
+            /// HEADER
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Alert History',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'System anomalies and real-time alerts.',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
                 OutlinedButton(
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white38),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    'FILTER',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  child: const Text('Filter'),
                 ),
                 const SizedBox(width: 10),
-                ElevatedButton(
+                ElevatedButton.icon(
                   onPressed: () {},
+                  icon: const Icon(Icons.download, size: 16),
+                  label: const Text('Export'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
                     ),
-                  ),
-                  child: const Text(
-                    'EXPORT CSV',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            /// ===== TABLE HEADER =====
+            /// TABLE
             _tableHeader(),
-
             const SizedBox(height: 10),
-
-            /// ===== TABLE BODY =====
-            Expanded(
-              child: ListView.separated(
-                itemCount: alerts.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: 10),
-                itemBuilder: (_, i) {
-                  final a = alerts[i];
-                  final color = _severityColor(a['severity']!);
-                  return _alertRow(a, color);
-                },
-              ),
-            ),
+            ...alerts.map((a) {
+              final color = _severityColor(a['severity']!);
+              return _alertRow(a, color);
+            }).toList(),
           ],
         ),
       ),
@@ -147,30 +129,34 @@ class AlertsScreen extends StatelessWidget {
   Widget _tableHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
-      ),
+      decoration: _card(),
       child: const Row(
         children: [
           Expanded(
-              flex: 3,
-              child: Text('TIME',
-                  style: TextStyle(color: Colors.white70, fontSize: 11))),
+            flex: 3,
+            child: Text('TIME',
+                style: TextStyle(color: Colors.white70, fontSize: 11)),
+          ),
           Expanded(
-              flex: 4,
-              child: Text('SENSOR',
-                  style: TextStyle(color: Colors.white70, fontSize: 11))),
+            flex: 4,
+            child: Text('SENSOR',
+                style: TextStyle(color: Colors.white70, fontSize: 11)),
+          ),
           Expanded(
-              flex: 2,
+            flex: 2,
+            child: Center(
               child: Text('SEVERITY',
-                  style: TextStyle(color: Colors.white70, fontSize: 11))),
+                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+            ),
+          ),
           Expanded(
-              flex: 2,
-              child: Text('VALUE',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(color: Colors.white70, fontSize: 11))),
+            flex: 2,
+            child: Text(
+              'VALUE',
+              textAlign: TextAlign.right,
+              style: TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+          ),
         ],
       ),
     );
@@ -180,22 +166,16 @@ class AlertsScreen extends StatelessWidget {
 
   Widget _alertRow(Map<String, String> a, Color color) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF121212),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
+      decoration: _card(),
       child: Row(
         children: [
           Expanded(
             flex: 3,
             child: Text(
               a['time']!,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.white,
-              ),
+              style: const TextStyle(fontSize: 11, color: Colors.white),
             ),
           ),
           Expanded(
@@ -214,13 +194,14 @@ class AlertsScreen extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: color),
                 ),
                 child: Text(
                   a['severity']!.toUpperCase(),
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),
@@ -248,57 +229,113 @@ class AlertsScreen extends StatelessWidget {
 
   Drawer _buildDrawer(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF0E0E0E),
-      child: Column(
-        children: [
-          const DrawerHeader(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(child: Icon(Icons.person)),
-                SizedBox(height: 12),
-                Text('SMART STORE',
-                    style: TextStyle(color: Colors.white)),
-                Text('IoT Monitoring',
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
-              ],
+      width: 280,
+      backgroundColor: const Color(0xFF0C0C0C),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: const [
+                  Icon(Icons.dashboard,
+                      color: Colors.blueAccent, size: 32),
+                  SizedBox(width: 12),
+                  Text(
+                    'SMART STORE\nIoT Monitoring',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          _drawerItem(context, Icons.dashboard, 'Dashboard', '/dashboard'),
-          _drawerItem(context, Icons.store, 'Sites', '/sites'),
-          _drawerItem(context, Icons.router, 'Hubs', '/hubs'),
-          _drawerItem(context, Icons.sensors, 'Sensors', '/sensors'),
-          _drawerItem(context, Icons.warning, 'Alerts', '/alerts',
-              active: true),
-          const Spacer(),
-          _drawerItem(context, Icons.logout, 'Logout', '/login'),
-        ],
+            const Divider(color: Colors.white12),
+
+            _menuItem(context, Icons.dashboard, 'Dashboard', '/dashboard'),
+            _menuItem(context, Icons.store, 'Sites', '/sites'),
+            _menuItem(context, Icons.router, 'Hubs', '/hubs'),
+            _menuItem(context, Icons.sensors, 'Sensors', '/sensors'),
+            _menuItem(context, Icons.warning, 'Alerts', '/alerts',
+                active: true),
+
+            const Spacer(),
+            const Divider(color: Colors.white12),
+            _logoutItem(context),
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _drawerItem(
+  Widget _menuItem(
     BuildContext context,
     IconData icon,
     String title,
     String route, {
     bool active = false,
   }) {
-    return ListTile(
-      leading: Icon(icon, color: active ? Colors.white : Colors.white54),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: active ? Colors.white : Colors.white70,
-          fontWeight: active ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
+    return InkWell(
       onTap: () {
         Navigator.pop(context);
         if (!active) {
           Navigator.pushReplacementNamed(context, route);
         }
       },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: active
+            ? BoxDecoration(color: Colors.white.withOpacity(0.05))
+            : null,
+        child: Row(
+          children: [
+            Icon(icon,
+                color: active ? Colors.white : Colors.white70, size: 20),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                color: active ? Colors.white : Colors.white70,
+                fontWeight:
+                    active ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
+
+  Widget _logoutItem(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, '/login');
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: const [
+            Icon(Icons.logout, color: Colors.redAccent),
+            SizedBox(width: 16),
+            Text(
+              'Logout',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  BoxDecoration _card() => BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF262626)),
+      );
 }

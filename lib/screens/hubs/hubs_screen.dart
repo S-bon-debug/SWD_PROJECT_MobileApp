@@ -37,29 +37,27 @@ class _HubsScreenState extends State<HubsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0B0B0B),
-
-      /// ===== MENU =====
       drawer: _buildDrawer(context),
 
       /// ===== APP BAR =====
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF0E0E0E),
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'Hubs Management',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          'Hubs',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
 
       /// ===== BODY =====
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// HEADER
+            /// ===== HEADER =====
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
@@ -81,7 +79,6 @@ class _HubsScreenState extends State<HubsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _openAddHubDialog,
                   icon: const Icon(Icons.add),
@@ -89,8 +86,9 @@ class _HubsScreenState extends State<HubsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
+                    elevation: 0,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
+                      horizontal: 16,
                       vertical: 12,
                     ),
                     shape: RoundedRectangleBorder(
@@ -101,9 +99,9 @@ class _HubsScreenState extends State<HubsScreen> {
               ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            /// LIST
+            /// ===== LIST =====
             Expanded(
               child: ListView.builder(
                 itemCount: hubs.length,
@@ -115,9 +113,9 @@ class _HubsScreenState extends State<HubsScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: const Color(0xFF141414),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white12),
+                      border: Border.all(color: const Color(0xFF262626)),
                     ),
                     child: Row(
                       children: [
@@ -184,9 +182,8 @@ class _HubsScreenState extends State<HubsScreen> {
                         ),
 
                         const SizedBox(width: 8),
-
-                        /// MORE
-                        const Icon(Icons.more_vert, color: Colors.white38),
+                        const Icon(Icons.more_vert,
+                            color: Colors.white38),
                       ],
                     ),
                   );
@@ -199,53 +196,97 @@ class _HubsScreenState extends State<HubsScreen> {
     );
   }
 
-  /// ===== DRAWER =====
+  // ================= DRAWER (WEB STYLE) =================
   Drawer _buildDrawer(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF0E0E0E),
-      child: Column(
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(color: Color(0xFF141414)),
-            child: Align(
-              alignment: Alignment.bottomLeft,
-              child: Text(
-                'SMART STORE\nIoT Monitoring',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+      width: 280,
+      backgroundColor: const Color(0xFF0C0C0C),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: const [
+                  Icon(Icons.dashboard,
+                      color: Colors.blueAccent, size: 32),
+                  SizedBox(width: 12),
+                  Text(
+                    'SMART STORE\nIoT Monitoring',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white12),
+
+            _menuItem(context, Icons.dashboard, 'Dashboard', '/dashboard'),
+            _menuItem(context, Icons.store, 'Sites', '/sites'),
+            _menuItem(context, Icons.router, 'Hubs', '/hubs'),
+            _menuItem(context, Icons.sensors, 'Sensors', '/sensors'),
+            _menuItem(context, Icons.warning, 'Alerts', '/alerts'),
+
+            const Spacer(),
+            const Divider(color: Colors.white12),
+
+            /// LOGOUT
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  children: const [
+                    Icon(Icons.logout, color: Colors.redAccent),
+                    SizedBox(width: 16),
+                    Text(
+                      'Logout',
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-
-          _drawerItem(Icons.dashboard, 'Dashboard', '/dashboard', context),
-          _drawerItem(Icons.store, 'Sites', '/sites', context),
-          _drawerItem(Icons.router, 'Hubs', '/hubs', context),
-          _drawerItem(Icons.sensors, 'Sensors', '/sensors', context),
-          _drawerItem(Icons.warning, 'Alerts', '/alerts', context),
-
-          const Spacer(),
-
-          _drawerItem(Icons.logout, 'Logout', '/login', context),
-        ],
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
 
-  ListTile _drawerItem(
+  Widget _menuItem(
+    BuildContext context,
     IconData icon,
     String title,
     String route,
-    BuildContext context,
   ) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+    return InkWell(
       onTap: () {
         Navigator.pop(context);
         Navigator.pushReplacementNamed(context, route);
       },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white70, size: 20),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
