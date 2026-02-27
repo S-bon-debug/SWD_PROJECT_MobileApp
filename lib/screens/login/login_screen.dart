@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../dashboard/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,25 +15,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool isLoading = false;
 
-  Future<void> _login() async {
-    setState(() => isLoading = true);
+ Future<void> _login() async {
+  setState(() => isLoading = true);
 
-    try {
-      final result = await AuthService.login(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
+  try {
+    final result = await AuthService.login(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
 
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
+    final token = result["token"]; // 👈 LẤY TOKEN RA
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DashboardScreen(token: token),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  } finally {
+    if (mounted) setState(() => isLoading = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {
