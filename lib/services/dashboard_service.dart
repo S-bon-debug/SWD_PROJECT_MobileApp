@@ -35,4 +35,23 @@ class DashboardService {
       throw Exception('Failed to load alerts');
     }
   }
+
+    Future<Map<String, dynamic>> getCurrentEnvironment(
+    String token, int hubId) async {
+  final response = await http.get(
+    Uri.parse(
+        "https://swd-project-api.onrender.com/api/dashboard/hub/$hubId/current-environment"),
+    headers: {
+      "Authorization": "Bearer $token",
+      "accept": "*/*",
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final body = jsonDecode(response.body);
+    return body["data"];
+  } else {
+    throw Exception("Failed to load environment data");
+  }
+}
 }
