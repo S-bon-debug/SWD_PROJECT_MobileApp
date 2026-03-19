@@ -25,7 +25,7 @@ class AlertRulesScreenState extends State<AlertRulesScreen> {
   int currentPage = 1;
   int totalRules = 0;
   bool isLoadingMore = false;
-  final int limit = 10;
+  final int limit = 7;
 
   // Search state
   final TextEditingController _searchController = TextEditingController();
@@ -192,7 +192,13 @@ class AlertRulesScreenState extends State<AlertRulesScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 16),
-              _buildSearchBar(),
+              Row(
+                children: [
+                  Expanded(child: _buildSearchBar()),
+                  const SizedBox(width: 12),
+                  _refreshButton(),
+                ],
+              ),
               const SizedBox(height: 16),
               if (isLoading && rules.isEmpty)
                 const Center(child: Padding(
@@ -221,7 +227,7 @@ class AlertRulesScreenState extends State<AlertRulesScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Container(
-                    width: 790,
+                    width: 850, // increased from 790
                     decoration: BoxDecoration(
                       color: const Color(0xFF141414).withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
@@ -272,10 +278,10 @@ class AlertRulesScreenState extends State<AlertRulesScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'Page $currentPage of $totalPages',
+            'Page $currentPage / $totalPages',
             style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
+                color: Colors.white,
+                fontSize: 13,
                 fontWeight: FontWeight.bold),
           ),
         ),
@@ -379,6 +385,22 @@ class AlertRulesScreenState extends State<AlertRulesScreen> {
           Container(width: 120, alignment: Alignment.center, child: const Text('PRIORITY', style: _tableHeaderStyle)),
           Container(width: 120, alignment: Alignment.center, child: const Text('ACTIONS', style: _tableHeaderStyle)),
         ],
+      ),
+    );
+  }
+
+  Widget _refreshButton() {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: IconButton(
+        onPressed: _onRefresh,
+        icon: const Icon(Icons.refresh, color: Colors.blueAccent, size: 20),
+        tooltip: 'Refresh',
       ),
     );
   }

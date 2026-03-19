@@ -28,7 +28,7 @@ class AlertService {
         if (data is Map) {
           return {
             'alerts': data['data'] ?? [],
-            'total': data['total'] ?? 0,
+            'total': data['totalCount'] ?? data['total_count'] ?? data['total'] ?? (data['data'] is List ? data['data'].length : 0),
           };
         } else if (data is List) {
           return {
@@ -67,7 +67,7 @@ class AlertService {
         final data = jsonDecode(response.body);
         return {
           'rules': data['data'] ?? [],
-          'total': data['totalCount'] ?? 0,
+          'total': data['totalCount'] ?? data['total_count'] ?? data['total'] ?? (data['data'] is List ? data['data'].length : 0),
         };
       } else {
         throw Exception('Server error: ${response.statusCode}');

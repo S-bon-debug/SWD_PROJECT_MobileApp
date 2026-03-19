@@ -20,8 +20,10 @@ class _SensorsScreenState extends State<SensorsScreen> {
   final SiteService _siteService = SiteService();
 
   List<dynamic> sensors = [];
-  List<dynamic> sites = [];
+   List<dynamic> sites = [];
   List<dynamic> types = [];
+  List<dynamic> hubs = [];
+  final HubService _hubService = HubService();
 
   bool isLoading = true;
   String? errorMessage;
@@ -66,10 +68,12 @@ class _SensorsScreenState extends State<SensorsScreen> {
     try {
       final fetchedSites = await _siteService.fetchSites(token);
       final fetchedTypes = await _sensorService.fetchSensorTypes(token);
+      final fetchedHubs = await _hubService.fetchHubs(token);
       if (mounted) {
         setState(() {
           sites = fetchedSites;
           types = fetchedTypes;
+          hubs = fetchedHubs;
         });
       }
     } catch (e) {
@@ -82,9 +86,9 @@ class _SensorsScreenState extends State<SensorsScreen> {
     if (token == null) return;
     try {
       final results = await Future.wait([
-        _sensorService.fetchSensors(token, pageSize: 1),
-        _sensorService.fetchSensors(token, status: 'Active', pageSize: 1),
-        _sensorService.fetchSensors(token, status: 'Inactive', pageSize: 1),
+        _sensorService.fetchSensors(token, hubId: selectedHubId, pageSize: 1),
+        _sensorService.fetchSensors(token, hubId: selectedHubId, status: 'Active', pageSize: 1),
+        _sensorService.fetchSensors(token, hubId: selectedHubId, status: 'Inactive', pageSize: 1),
       ]);
 
       if (mounted) {
@@ -239,20 +243,20 @@ class _SensorsScreenState extends State<SensorsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'IoT Sensors',
-                    style: TextStyle(
+                   Text(
+                    selectedHubId != null ? 'Sensors in $selectedHubName' : 'IoT Sensors',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 6),
-                  Text(
+                  const SizedBox(height: 6),
+                  const Text(
                     'Real-time environmental statistics.',
                     style: TextStyle(color: Colors.white60, fontSize: 13),
                   ),
@@ -361,9 +365,26 @@ class _SensorsScreenState extends State<SensorsScreen> {
               currentPage = 1;
               isLoading = true;
             });
-            _loadSensors().then((_) {
-              if (mounted) setState(() => isLoading = false);
+            _initialLoad(); // reload everything as site affects hubs and stats
+          },
+          cardColor: cardColor,
+          borderColor: borderColor,
+        ),
+        _filterDropdown<int>(
+          hint: 'Hubs',
+          value: selectedHubId,
+          items: hubs.where((h) => selectedSiteId == null || h['siteId'] == selectedSiteId).map((h) => DropdownMenuItem<int>(
+            value: h['hubId'],
+            child: Text(h['name'] ?? 'Hub ${h['hubId']}', style: const TextStyle(color: Colors.white)),
+          )).toList(),
+          onChanged: (val) {
+            setState(() {
+              selectedHubId = val;
+              selectedHubName = hubs.firstWhere((h) => h['hubId'] == val, orElse: () => {'name': 'Hub $val'})['name'];
+              currentPage = 1;
+              isLoading = true;
             });
+            _initialLoad(); // reload everything as hub affects stats
           },
           cardColor: cardColor,
           borderColor: borderColor,
@@ -401,6 +422,10 @@ class _SensorsScreenState extends State<SensorsScreen> {
     required Color cardColor,
     required Color borderColor,
   }) {
+    // Ensure the selected value exists in the items to avoid Flutter assertion errors
+    final bool valueExists = value == null || items.any((item) => item.value == value);
+    final T? safeValue = valueExists ? value : null;
+
     return Container(
       constraints: const BoxConstraints(minWidth: 120),
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -411,7 +436,7 @@ class _SensorsScreenState extends State<SensorsScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
-          value: value,
+          value: safeValue,
           hint: Text(hint, style: const TextStyle(color: Colors.white70, fontSize: 13)),
           dropdownColor: cardColor,
           icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white38),
@@ -510,9 +535,24 @@ class _SensorsScreenState extends State<SensorsScreen> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onSelected: (val) {
-                      if (val == 'delete') _showDeleteConfirm(s['sensorId']);
+                      if (val == 'delete') {
+                        _showDeleteConfirm(s['sensorId']);
+                      } else if (val == 'alert') {
+                        // Navigate to Alert Rules or History
+                        Navigator.pushNamed(context, '/alerts');
+                      }
                     },
                     itemBuilder: (ctx) => [
+                      const PopupMenuItem(
+                        value: 'alert', 
+                        child: Row(
+                          children: [
+                            Icon(Icons.notifications_active_outlined, size: 18, color: Colors.blueAccent),
+                            SizedBox(width: 8),
+                            Text('Cấu hình cảnh báo'),
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem(value: 'edit', child: Text('Chỉnh sửa')),
                       const PopupMenuItem(value: 'delete', child: Text('Xóa', style: TextStyle(color: Colors.redAccent))),
                     ],

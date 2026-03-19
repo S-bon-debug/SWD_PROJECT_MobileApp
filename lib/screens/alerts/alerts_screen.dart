@@ -29,7 +29,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   int currentPage = 1;
   int totalAlerts = 0;
   bool isLoadingMore = false;
-  final int limit = 10;
+  final int limit = 7;
 
   // Search state
   final TextEditingController _searchController = TextEditingController();
@@ -176,7 +176,13 @@ class _AlertsScreenState extends State<AlertsScreen> {
           const SizedBox(height: 16),
           _buildSearchBar(),
           const SizedBox(height: 12),
-          _buildFilters(),
+          Row(
+            children: [
+              Expanded(child: _buildFilters()),
+              const SizedBox(width: 12),
+              _refreshButton(),
+            ],
+          ),
           const SizedBox(height: 16),
           if (isLoading)
             const Center(
@@ -210,7 +216,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Container(
-                width: 900,
+                width: 950, // increased from 900
                 decoration: BoxDecoration(
                   color: const Color(0xFF141414).withOpacity(0.3),
                   borderRadius: BorderRadius.circular(16),
@@ -274,10 +280,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'Page $currentPage of $totalPages',
+            'Page $currentPage / $totalPages',
             style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
+                color: Colors.white,
+                fontSize: 13,
                 fontWeight: FontWeight.bold),
           ),
         ),
@@ -532,6 +538,22 @@ class _AlertsScreenState extends State<AlertsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _refreshButton() {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: IconButton(
+        onPressed: _onRefresh,
+        icon: const Icon(Icons.refresh, color: Colors.blueAccent, size: 20),
+        tooltip: 'Refresh',
       ),
     );
   }

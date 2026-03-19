@@ -334,7 +334,7 @@ class _HubsScreenState extends State<HubsScreen> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Container(
-        width: 1050, // width for all columns
+        width: 1100, // increased from 1050 to prevent overflow
         decoration: BoxDecoration(
           color: const Color(0xFF141414).withOpacity(0.3),
           borderRadius: BorderRadius.circular(16),
@@ -353,7 +353,7 @@ class _HubsScreenState extends State<HubsScreen> {
                   SizedBox(width: 150, child: Text('SENSORS', style: _tableHeaderStyle)),
                   SizedBox(width: 100, child: Text('STATUS', style: _tableHeaderStyle)),
                   SizedBox(width: 200, child: Text('LAST HANDSHAKE', style: _tableHeaderStyle)),
-                  const Text('ACTIONS', style: _tableHeaderStyle),
+                  SizedBox(width: 120, child: const Text('ACTIONS', style: _tableHeaderStyle)),
                 ],
               ),
             ),
