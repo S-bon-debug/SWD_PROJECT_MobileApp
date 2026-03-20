@@ -5,7 +5,14 @@ import '../services/auth_service.dart';
 import '../services/hub_service.dart';
 
 class HistoryChartWidget extends StatefulWidget {
-  const HistoryChartWidget({super.key});
+  final int? fixedHubId;
+  final bool allowHubSelection;
+
+  const HistoryChartWidget({
+    super.key,
+    this.fixedHubId,
+    this.allowHubSelection = true,
+  });
 
   @override
   State<HistoryChartWidget> createState() => _HistoryChartWidgetState();
@@ -32,16 +39,39 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
     _loadHubs();
   }
 
+  @override
+  void didUpdateWidget(covariant HistoryChartWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.fixedHubId != null && widget.fixedHubId != selectedHubId) {
+      setState(() {
+        selectedHubId = widget.fixedHubId;
+        historySensors = [];
+        spots = [];
+      });
+      loadChart();
+    }
+  }
+
   Future<void> _loadHubs() async {
     if (AuthService.token == null) return;
     try {
       final data = await _hubService.fetchHubs(AuthService.token!);
+
+      int? nextHubId = widget.fixedHubId;
+      if (nextHubId == null && data.isNotEmpty) {
+        final firstHub = data[0];
+        nextHubId = (firstHub['hubId'] ??
+            firstHub['id'] ??
+            firstHub['Id'] ??
+            firstHub['ID'] ??
+            firstHub['hub_id']);
+      }
+
       setState(() {
         hubs = data;
-        if (hubs.isNotEmpty) {
-          final firstHub = hubs[0];
-          selectedHubId = (firstHub['hubId'] ?? firstHub['id'] ?? firstHub['Id'] ?? firstHub['ID'] ?? firstHub['hub_id']);
-        }
+        selectedHubId = nextHubId is int
+            ? nextHubId
+            : int.tryParse(nextHubId?.toString() ?? '');
         hubsLoading = false;
       });
       if (selectedHubId != null) loadChart();
@@ -57,11 +87,14 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
 
     try {
       final token = AuthService.token!;
-      final String from = "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')} 00:00:00";
-      final String to = "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')} 23:59:59";
+      final String from =
+          "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')} 00:00:00";
+      final String to =
+          "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')} 23:59:59";
 
-      final dynamic responseData = await _service.getHistory(token, selectedHubId!, from, to);
-      
+      final dynamic responseData =
+          await _service.getHistory(token, selectedHubId!, from, to);
+
       final List<dynamic> sensorData = (responseData is List)
           ? responseData
           : (responseData is Map && responseData['sensors'] is List
@@ -76,10 +109,13 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
 
       if (sensorData.isNotEmpty) {
         // Auto select first sensor if none selected or not in new data
-        if (selectedSensorId == null || !sensorData.any((s) => (s['sensorId'] ?? s['id']) == selectedSensorId)) {
+        if (selectedSensorId == null ||
+            !sensorData
+                .any((s) => (s['sensorId'] ?? s['id']) == selectedSensorId)) {
           _processSensorData(sensorData[0]);
         } else {
-          final s = sensorData.firstWhere((s) => (s['sensorId'] ?? s['id']) == selectedSensorId);
+          final s = sensorData.firstWhere(
+              (s) => (s['sensorId'] ?? s['id']) == selectedSensorId);
           _processSensorData(s);
         }
       } else {
@@ -93,8 +129,11 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
   }
 
   void _processSensorData(dynamic sensor) {
-    final readingsRaw = sensor["readings"] ?? sensor["reading_history"] ?? sensor["history"] ?? [];
-    
+    final readingsRaw = sensor["readings"] ??
+        sensor["reading_history"] ??
+        sensor["history"] ??
+        [];
+
     if ((readingsRaw as List).isEmpty) {
       setState(() {
         spots = [];
@@ -104,12 +143,21 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
     }
 
     // Convert readings to spots
-    final List<Map<String, dynamic>> readings = readingsRaw.map((e) => Map<String, dynamic>.from(e)).toList();
-    
+    final List<Map<String, dynamic>> readings =
+        readingsRaw.map((e) => Map<String, dynamic>.from(e)).toList();
+
     // Sort by time ascending
     readings.sort((a, b) {
-      final t1Str = a["recordedAt"] ?? a["time"] ?? a["timestamp"] ?? a["updatedAt"] ?? "";
-      final t2Str = b["recordedAt"] ?? b["time"] ?? b["timestamp"] ?? b["updatedAt"] ?? "";
+      final t1Str = a["recordedAt"] ??
+          a["time"] ??
+          a["timestamp"] ??
+          a["updatedAt"] ??
+          "";
+      final t2Str = b["recordedAt"] ??
+          b["time"] ??
+          b["timestamp"] ??
+          b["updatedAt"] ??
+          "";
       final t1 = DateTime.tryParse(t1Str) ?? DateTime.now();
       final t2 = DateTime.tryParse(t2Str) ?? DateTime.now();
       return t1.compareTo(t2);
@@ -130,13 +178,15 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
 
     List<FlSpot> newSpots = [];
     double? lastX;
-    
+
     for (int i = 0; i < readings.length; i++) {
       final reading = readings[i];
       double val = 0;
-      
+
       if (reading['value'] != null) {
-        val = (reading['value'] is num) ? reading['value'].toDouble() : double.tryParse(reading['value'].toString()) ?? 0;
+        val = (reading['value'] is num)
+            ? reading['value'].toDouble()
+            : double.tryParse(reading['value'].toString()) ?? 0;
       } else if (reading['v1'] != null) {
         val = (reading['v1'] is num) ? reading['v1'].toDouble() : 0;
       } else if (reading['v2'] != null) {
@@ -144,32 +194,36 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
       } else if (reading['v3'] != null) {
         val = (reading['v3'] is num) ? reading['v3'].toDouble() : 0;
       }
-      
+
       if (val == 0) continue;
 
-      final timeStr = reading["recordedAt"] ?? reading["time"] ?? reading["timestamp"] ?? reading["updatedAt"];
-      
+      final timeStr = reading["recordedAt"] ??
+          reading["time"] ??
+          reading["timestamp"] ??
+          reading["updatedAt"];
+
       if (timeStr != null) {
         try {
           final time = DateTime.parse(timeStr);
           final x = time.millisecondsSinceEpoch.toDouble();
-          
+
           // Skip if same timestamp or too close (within 1 second) to avoid vertical artifacts
           if (lastX != null && (x - lastX).abs() < 1000) continue;
-          
+
           newSpots.add(FlSpot(x, val));
           lastX = x;
         } catch (e) {
           continue;
         }
-      } 
+      }
     }
- 
+
     // Normalize X (minutes from start) for better rendering
     if (newSpots.isNotEmpty) {
       final double minX = newSpots[0].x;
       // Convert ms to minutes for a more manageable scale
-      newSpots = newSpots.map((s) => FlSpot((s.x - minX) / 60000, s.y)).toList();
+      newSpots =
+          newSpots.map((s) => FlSpot((s.x - minX) / 60000, s.y)).toList();
     }
 
     // Sort spots by X to ensure fl_chart draws a continuous line
@@ -184,7 +238,13 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
 
   Widget _buildChart() {
     if (isLoading) return const Center(child: CircularProgressIndicator());
-    if (spots.isEmpty) return Center(child: Text(selectedHubId == null ? "No Hub Selected" : "No data found for this range", style: const TextStyle(color: Colors.white38, fontSize: 13)));
+    if (spots.isEmpty)
+      return Center(
+          child: Text(
+              selectedHubId == null
+                  ? "No Hub Selected"
+                  : "No data found for this range",
+              style: const TextStyle(color: Colors.white38, fontSize: 13)));
 
     return LineChart(
       LineChartData(
@@ -268,8 +328,13 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text("Historical Readings",
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-            if (hubs.length > 1)
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold)),
+            if (widget.allowHubSelection &&
+                widget.fixedHubId == null &&
+                hubs.length > 1)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
@@ -282,7 +347,11 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
                   underline: const SizedBox(),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                   items: hubs.map((h) {
-                    final id = (h['hubId'] ?? h['id'] ?? h['Id'] ?? h['ID'] ?? h['hub_id']);
+                    final id = (h['hubId'] ??
+                        h['id'] ??
+                        h['Id'] ??
+                        h['ID'] ??
+                        h['hub_id']);
                     return DropdownMenuItem<int>(
                       value: id is int ? id : int.parse(id.toString()),
                       child: Text(h['name'] ?? 'Hub $id'),
@@ -346,17 +415,27 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
                     _processSensorData(s);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(0.05),
+                      color: isSelected
+                          ? Colors.blueAccent
+                          : Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white10),
+                      border: Border.all(
+                          color:
+                              isSelected ? Colors.blueAccent : Colors.white10),
                     ),
                     child: Center(
                       child: Text(
-                        (s['typeName'] ?? s['name'] ?? 'Sensor').toString().toUpperCase(),
-                        style: TextStyle(color: isSelected ? Colors.white : Colors.white60, fontSize: 10, fontWeight: FontWeight.bold),
+                        (s['typeName'] ?? s['name'] ?? 'Sensor')
+                            .toString()
+                            .toUpperCase(),
+                        style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.white60,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -380,8 +459,11 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
               : (spots.isEmpty
                   ? Center(
                       child: Text(
-                        selectedHubId == null ? "No Hub Selected" : "No data found for this range",
-                        style: const TextStyle(color: Colors.white38, fontSize: 13),
+                        selectedHubId == null
+                            ? "No Hub Selected"
+                            : "No data found for this range",
+                        style: const TextStyle(
+                            color: Colors.white38, fontSize: 13),
                       ),
                     )
                   : LineChart(
@@ -416,7 +498,10 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
     );
   }
 
-  Widget _dateTile({required String label, required DateTime date, required VoidCallback onTap}) {
+  Widget _dateTile(
+      {required String label,
+      required DateTime date,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -430,11 +515,18 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 2),
             Text(
               "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}",
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500),
             ),
           ],
         ),

@@ -23,8 +23,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? stats;
   Map<String, dynamic>? environment;
   List<dynamic> alerts = [];
+  List<dynamic> hubs = [];
+  int? selectedHubId;
+  String selectedHubName = 'Unknown Hub';
 
   bool isLoading = true;
+  bool isEnvironmentLoading = false;
 
   @override
   void initState() {
@@ -53,22 +57,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final statsData = await _service.getStats(token);
       final alertData = await _service.getAlerts(token);
 
-      // Fetch hubs to get a valid hubId
-      final hubs = await _hubService.fetchHubs(token);
+      final fetchedHubs = await _hubService.fetchHubs(token);
+      int? nextHubId = selectedHubId;
+
+      if (fetchedHubs.isNotEmpty) {
+        final hasSelectedHub = fetchedHubs.any(
+          (h) => _parseHubId(h) == selectedHubId,
+        );
+
+        if (!hasSelectedHub || selectedHubId == null) {
+          nextHubId = _parseHubId(fetchedHubs.first);
+        }
+      } else {
+        nextHubId = null;
+      }
 
       Map<String, dynamic>? envData;
-      if (hubs.isNotEmpty) {
-        // Use the first hub's ID (check for different possible key names)
-        final firstHub = hubs[0];
-        final hubId = firstHub['hubId'] ?? firstHub['id'] ?? firstHub['Id'] ?? firstHub['ID'] ?? firstHub['hub_id'];
-        if (hubId != null) {
-          envData = await _service.getCurrentEnvironment(token, hubId is int ? hubId : int.parse(hubId.toString()));
-        }
+      if (nextHubId != null) {
+        envData = await _service.getCurrentEnvironment(token, nextHubId);
       }
 
       setState(() {
         stats = statsData;
         alerts = alertData;
+        hubs = fetchedHubs;
+        selectedHubId = nextHubId;
+        selectedHubName = _resolveHubName(nextHubId, fetchedHubs);
         environment = envData;
         isLoading = false;
       });
@@ -78,26 +92,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  int? _parseHubId(dynamic hub) {
+    if (hub is! Map) return null;
+    final dynamic id =
+        hub['hubId'] ?? hub['id'] ?? hub['Id'] ?? hub['ID'] ?? hub['hub_id'];
+    if (id is int) return id;
+    return int.tryParse(id?.toString() ?? '');
+  }
+
+  String _resolveHubName(int? hubId, List<dynamic> source) {
+    if (hubId == null) return 'Unknown Hub';
+    for (final h in source) {
+      if (_parseHubId(h) == hubId) {
+        return (h['name'] ?? 'Hub $hubId').toString();
+      }
+    }
+    return 'Hub $hubId';
+  }
+
+  Future<void> _loadCurrentEnvironmentForHub(int? hubId) async {
+    if (hubId == null || AuthService.token == null) {
+      setState(() {
+        selectedHubId = hubId;
+        selectedHubName = _resolveHubName(hubId, hubs);
+        environment = null;
+      });
+      return;
+    }
+
+    setState(() {
+      selectedHubId = hubId;
+      selectedHubName = _resolveHubName(hubId, hubs);
+      isEnvironmentLoading = true;
+    });
+
+    try {
+      final envData =
+          await _service.getCurrentEnvironment(AuthService.token!, hubId);
+      if (!mounted) return;
+      setState(() {
+        environment = envData;
+        isEnvironmentLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Environment load error: $e');
+      if (!mounted) return;
+      setState(() {
+        environment = null;
+        isEnvironmentLoading = false;
+      });
+    }
+  }
+
   // ================= ENV PARSE =================
 
   double _getEnvValue(String type) {
     if (environment == null) return 0;
-    
+
     // Handle both { "sensors": [...] } and direct list [...]
-    final List<dynamic> sensors = (environment is List) 
-        ? environment as List 
-        : (environment?["sensors"] is List ? environment!["sensors"] as List : []);
+    final List<dynamic> sensors = (environment is List)
+        ? environment as List
+        : (environment?["sensors"] is List
+            ? environment!["sensors"] as List
+            : []);
 
     for (var s in sensors) {
-      final String? typeName = (s["typeName"] ?? s["type_name"] ?? s["type"] ?? s["sensorType"])?.toString().toLowerCase();
+      final String? typeName =
+          (s["typeName"] ?? s["type_name"] ?? s["type"] ?? s["sensorType"])
+              ?.toString()
+              .toLowerCase();
       final String typeLower = type.toLowerCase();
-      
+
       // Check for both English and common Vietnamese type names
       bool match = false;
-      if (typeName == typeLower) match = true;
-      else if (typeLower == "temperature" && (typeName == "nhiệt độ" || typeName == "nhiet do")) match = true;
-      else if (typeLower == "humidity" && (typeName == "độ ẩm" || typeName == "do am")) match = true;
-      else if (typeLower == "pressure" && (typeName == "áp suất" || typeName == "ap suat")) match = true;
+      if (typeName == typeLower)
+        match = true;
+      else if (typeLower == "temperature" &&
+          (typeName == "nhiệt độ" || typeName == "nhiet do"))
+        match = true;
+      else if (typeLower == "humidity" &&
+          (typeName == "độ ẩm" || typeName == "do am"))
+        match = true;
+      else if (typeLower == "pressure" &&
+          (typeName == "áp suất" || typeName == "ap suat")) match = true;
 
       if (match &&
           s["readings"] != null &&
@@ -111,20 +188,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _getEnvName(String type) {
     if (environment == null) return '';
-    
-    final List<dynamic> sensors = (environment is List) 
-        ? environment as List 
-        : (environment?["sensors"] is List ? environment!["sensors"] as List : []);
+
+    final List<dynamic> sensors = (environment is List)
+        ? environment as List
+        : (environment?["sensors"] is List
+            ? environment!["sensors"] as List
+            : []);
 
     for (var s in sensors) {
-      final String? typeName = (s["typeName"] ?? s["type_name"] ?? s["type"] ?? s["sensorType"])?.toString().toLowerCase();
+      final String? typeName =
+          (s["typeName"] ?? s["type_name"] ?? s["type"] ?? s["sensorType"])
+              ?.toString()
+              .toLowerCase();
       final String typeLower = type.toLowerCase();
-      
+
       bool match = false;
-      if (typeName == typeLower) match = true;
-      else if (typeLower == "temperature" && (typeName == "nhiệt độ" || typeName == "nhiet do")) match = true;
-      else if (typeLower == "humidity" && (typeName == "độ ẩm" || typeName == "do am")) match = true;
-      else if (typeLower == "pressure" && (typeName == "áp suất" || typeName == "ap suat")) match = true;
+      if (typeName == typeLower)
+        match = true;
+      else if (typeLower == "temperature" &&
+          (typeName == "nhiệt độ" || typeName == "nhiet do"))
+        match = true;
+      else if (typeLower == "humidity" &&
+          (typeName == "độ ẩm" || typeName == "do am"))
+        match = true;
+      else if (typeLower == "pressure" &&
+          (typeName == "áp suất" || typeName == "ap suat")) match = true;
 
       if (match) {
         return s["name"] ?? s["sensorName"] ?? '';
@@ -150,7 +238,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text("Dashboard",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 22)),
         centerTitle: false,
         actions: const [
           NotificationBell(),
@@ -167,7 +258,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // ================= STATS =================
                     // ================= REFRESH =================
                     Row(
@@ -180,13 +270,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 fontWeight: FontWeight.bold)),
                         TextButton.icon(
                           onPressed: _loadDashboard,
-                          icon: const Icon(Icons.refresh, color: Colors.blueAccent, size: 20),
+                          icon: const Icon(Icons.refresh,
+                              color: Colors.blueAccent, size: 20),
                           label: const Text("Refresh",
-                              style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                              style: TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontWeight: FontWeight.bold)),
                           style: TextButton.styleFrom(
                             backgroundColor: Colors.blueAccent.withOpacity(0.1),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ],
@@ -237,52 +332,117 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
 
-                    // Hub status badge
-                    if (environment?['hubStatus'] == 'offline')
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: const Text("HUB OFFLINE",
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 12)),
+                    if (hubs.isNotEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.12)),
                         ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            dropdownColor: const Color(0xFF1A1A1A),
+                            value: selectedHubId,
+                            isExpanded: true,
+                            iconEnabledColor: Colors.white,
+                            style: const TextStyle(color: Colors.white),
+                            hint: const Text(
+                              'Select hub',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            items: hubs
+                                .map((h) {
+                                  final id = _parseHubId(h);
+                                  if (id == null) return null;
+                                  return DropdownMenuItem<int>(
+                                    value: id,
+                                    child: Text(
+                                      (h['name'] ?? 'Hub $id').toString(),
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                    ),
+                                  );
+                                })
+                                .whereType<DropdownMenuItem<int>>()
+                                .toList(),
+                            onChanged: (id) {
+                              if (id == null || id == selectedHubId) return;
+                              _loadCurrentEnvironmentForHub(id);
+                            },
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        'No hubs available',
+                        style: TextStyle(color: Colors.white.withOpacity(0.7)),
                       ),
 
-                    // individual cards for each metric, wrap to next line on narrow
-                    Column(
-                      children: [
-                        _envCard(
-                          title: "Temperature",
-                          value: temp,
-                          start: const Color(0xFFFF5F6D),
-                          end: const Color(0xFFFFC371),
-                          icon: Icons.thermostat_rounded,
-                          sensorName: tempName,
-                        ),
-                        const SizedBox(height: 12),
-                        _envCard(
-                          title: "Humidity",
-                          value: humidity,
-                          start: const Color(0xFF2193b0),
-                          end: const Color(0xFF6dd5ed),
-                          icon: Icons.water_drop_rounded,
-                          sensorName: humidName,
-                        ),
-                        const SizedBox(height: 12),
-                        _envCard(
-                          title: "Pressure",
-                          value: pressure,
-                          start: const Color(0xFF8E2DE2),
-                          end: const Color(0xFF4A00E0),
-                          icon: Icons.speed_rounded,
-                          sensorName: pressName,
-                        ),
-                      ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Showing data for: $selectedHubName',
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.65), fontSize: 12),
                     ),
+                    const SizedBox(height: 12),
+
+                    if (isEnvironmentLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else ...[
+                      // Hub status badge
+                      if (environment?['hubStatus'] == 'offline')
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(12)),
+                            child: const Text("HUB OFFLINE",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 12)),
+                          ),
+                        ),
+
+                      // individual cards for each metric, wrap to next line on narrow
+                      Column(
+                        children: [
+                          _envCard(
+                            title: "Temperature",
+                            value: temp,
+                            start: const Color(0xFFFF5F6D),
+                            end: const Color(0xFFFFC371),
+                            icon: Icons.thermostat_rounded,
+                            sensorName: tempName,
+                          ),
+                          const SizedBox(height: 12),
+                          _envCard(
+                            title: "Humidity",
+                            value: humidity,
+                            start: const Color(0xFF2193b0),
+                            end: const Color(0xFF6dd5ed),
+                            icon: Icons.water_drop_rounded,
+                            sensorName: humidName,
+                          ),
+                          const SizedBox(height: 12),
+                          _envCard(
+                            title: "Pressure",
+                            value: pressure,
+                            start: const Color(0xFF8E2DE2),
+                            end: const Color(0xFF4A00E0),
+                            icon: Icons.speed_rounded,
+                            sensorName: pressName,
+                          ),
+                        ],
+                      ),
+                    ],
 
                     const SizedBox(height: 30),
 
@@ -297,7 +457,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     const SizedBox(height: 12),
 
-                    HistoryChartWidget(),
+                    HistoryChartWidget(
+                      fixedHubId: selectedHubId,
+                      allowHubSelection: false,
+                    ),
 
                     // ================= ALERTS =================
                     const Text("Recent Alerts",
@@ -310,11 +473,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     if (alerts.isEmpty)
                       const Center(
                         child: Text("No active alerts at the moment",
-                            style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontStyle: FontStyle.italic)),
                       )
                     else
                       Column(
-                        children: alerts.take(5).map((a) => _alertItem(a)).toList(),
+                        children:
+                            alerts.take(5).map((a) => _alertItem(a)).toList(),
                       )
                   ],
                 ),
@@ -345,7 +511,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _statCard(
-      {required IconData icon, required String title, required String value, required Color color}) {
+      {required IconData icon,
+      required String title,
+      required String value,
+      required Color color}) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -367,10 +536,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 16),
                 Text(value,
                     style: const TextStyle(
-                        color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(title,
-                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.5), fontSize: 13)),
               ],
             ),
           ),
@@ -431,13 +603,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(title,
                           style: const TextStyle(
-                              color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
                       if (sensorName != null) ...[
                         const SizedBox(height: 4),
                         Text(sensorName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                            style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 12)),
                       ],
                     ],
                   ),
@@ -448,13 +624,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Text(display,
                         style: const TextStyle(
-                            color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold)),
                     if (hubOffline)
                       const Row(
                         children: [
-                          Icon(Icons.cloud_off, color: Colors.white70, size: 14),
+                          Icon(Icons.cloud_off,
+                              color: Colors.white70, size: 14),
                           SizedBox(width: 4),
-                          Text("Offline", style: TextStyle(color: Colors.white70, fontSize: 10)),
+                          Text("Offline",
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 10)),
                         ],
                       ),
                   ],
@@ -493,10 +674,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Text(name,
                         style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15)),
                     const SizedBox(height: 4),
                     Text(hubName,
-                        style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12)),
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.4),
+                            fontSize: 12)),
                   ],
                 ),
               ),
@@ -504,12 +689,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 flex: 2,
                 child: Text("${value}°C",
                     style: TextStyle(
-                        color: statusColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
               ),
               Expanded(
                 flex: 2,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -520,12 +708,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                            color: statusColor, shape: BoxShape.circle),
                       ),
                       const SizedBox(width: 6),
                       Text(status,
                           style: TextStyle(
-                              color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                              color: statusColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -550,7 +741,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       titlesData: FlTitlesData(
         show: true,
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles:
+            const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
@@ -562,7 +754,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   '${value.toInt()}h',
-                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10),
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.5), fontSize: 10),
                 ),
               );
             },
@@ -575,7 +768,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             getTitlesWidget: (value, meta) {
               return Text(
                 '${value.toInt()}°',
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10),
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.5), fontSize: 10),
               );
             },
             reservedSize: 30,
