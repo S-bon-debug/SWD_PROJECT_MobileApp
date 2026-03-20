@@ -4,16 +4,42 @@ import 'package:http/http.dart' as http;
 class AlertService {
   static const String baseUrl = 'https://swd-project-api.onrender.com/api';
 
-  Future<Map<String, dynamic>> fetchAlerts(String token, {int? siteId, String? sensorName, int page = 1, int limit = 20}) async {
+  Future<Map<String, dynamic>?> getAlertRuleById(
+      String token, int ruleId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/alerts/rules/$ruleId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'accept': '*/*',
+        },
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final dynamic body = jsonDecode(response.body);
+        if (body is Map && body['data'] is Map) {
+          return Map<String, dynamic>.from(body['data']);
+        }
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Get rule error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchAlerts(String token,
+      {int? siteId, String? sensorName, int page = 1, int limit = 20}) async {
     try {
       final queryParams = <String, String>{
         'page': page.toString(), // Dashboard usually uses 'page' and 'limit'
         'limit': limit.toString(),
       };
       if (siteId != null) queryParams['siteId'] = siteId.toString();
-      if (sensorName != null && sensorName.isNotEmpty) queryParams['sensorName'] = sensorName;
+      if (sensorName != null && sensorName.isNotEmpty)
+        queryParams['sensorName'] = sensorName;
 
-      final uri = Uri.parse('$baseUrl/notifications/history').replace(queryParameters: queryParams);
+      final uri = Uri.parse('$baseUrl/notifications/history')
+          .replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -28,7 +54,10 @@ class AlertService {
         if (data is Map) {
           return {
             'alerts': data['data'] ?? [],
-            'total': data['totalCount'] ?? data['total_count'] ?? data['total'] ?? (data['data'] is List ? data['data'].length : 0),
+            'total': data['totalCount'] ??
+                data['total_count'] ??
+                data['total'] ??
+                (data['data'] is List ? data['data'].length : 0),
           };
         } else if (data is List) {
           return {
@@ -45,7 +74,8 @@ class AlertService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchAlertRules(String token, {String? search, int page = 1, int limit = 20}) async {
+  Future<Map<String, dynamic>> fetchAlertRules(String token,
+      {String? search, int page = 1, int limit = 20}) async {
     try {
       final queryParams = <String, String>{
         'pageNumber': page.toString(),
@@ -53,7 +83,8 @@ class AlertService {
       };
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
-      final uri = Uri.parse('$baseUrl/alerts/rules').replace(queryParameters: queryParams);
+      final uri = Uri.parse('$baseUrl/alerts/rules')
+          .replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -67,7 +98,10 @@ class AlertService {
         final data = jsonDecode(response.body);
         return {
           'rules': data['data'] ?? [],
-          'total': data['totalCount'] ?? data['total_count'] ?? data['total'] ?? (data['data'] is List ? data['data'].length : 0),
+          'total': data['totalCount'] ??
+              data['total_count'] ??
+              data['total'] ??
+              (data['data'] is List ? data['data'].length : 0),
         };
       } else {
         throw Exception('Server error: ${response.statusCode}');
@@ -79,15 +113,17 @@ class AlertService {
 
   Future<bool> createAlertRule(String token, Map<String, dynamic> data) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/alerts/rules'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-          'accept': '*/*',
-        },
-        body: jsonEncode(data),
-      ).timeout(const Duration(seconds: 20));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/alerts/rules'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+              'accept': '*/*',
+            },
+            body: jsonEncode(data),
+          )
+          .timeout(const Duration(seconds: 20));
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -95,19 +131,41 @@ class AlertService {
     }
   }
 
-  Future<bool> updateAlertRule(String token, int ruleId, Map<String, dynamic> data) async {
+  Future<bool> updateAlertRule(
+      String token, int ruleId, Map<String, dynamic> data) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/alerts/rules/$ruleId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-          'accept': '*/*',
-        },
-        body: jsonEncode(data),
-      ).timeout(const Duration(seconds: 20));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/alerts/rules/$ruleId'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+              'accept': '*/*',
+            },
+            body: jsonEncode(data),
+          )
+          .timeout(const Duration(seconds: 20));
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) return true;
+
+      // Some backends validate a top-level "request" wrapper.
+      if (response.statusCode == 400) {
+        final wrapped = await http
+            .put(
+              Uri.parse('$baseUrl/alerts/rules/$ruleId'),
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+                'accept': '*/*',
+              },
+              body: jsonEncode({'request': data}),
+            )
+            .timeout(const Duration(seconds: 20));
+
+        return wrapped.statusCode == 200;
+      }
+
+      return false;
     } catch (e) {
       throw Exception('Update error: $e');
     }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_sensor_dialog.dart';
+import 'edit_sensor_dialog.dart';
+import 'sensor_alert_rule_dialog.dart';
 import '../../services/sensor_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/hub_service.dart';
@@ -679,9 +681,10 @@ class _SensorsScreenState extends State<SensorsScreen> {
                     onSelected: (val) {
                       if (val == 'delete') {
                         _showDeleteConfirm(s['sensorId']);
+                      } else if (val == 'edit') {
+                        _openEditSensor(s);
                       } else if (val == 'alert') {
-                        // Navigate to Alert Rules or History
-                        Navigator.pushNamed(context, '/alerts');
+                        _openAlertConfig(s);
                       }
                     },
                     itemBuilder: (ctx) => [
@@ -829,6 +832,39 @@ class _SensorsScreenState extends State<SensorsScreen> {
                 const Text('DELETE', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openEditSensor(dynamic sensor) {
+    showDialog(
+      context: context,
+      builder: (_) => EditSensorDialog(
+        sensor: sensor,
+        onSuccess: _initialLoad,
+      ),
+    );
+  }
+
+  void _openAlertConfig(dynamic sensor) {
+    final dynamic rawRuleId = sensor['ruleId'];
+    final int? ruleId = rawRuleId is int
+        ? rawRuleId
+        : int.tryParse(rawRuleId?.toString() ?? '');
+
+    if (ruleId == null || ruleId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Sensor này chưa có rule cảnh báo để cấu hình')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => SensorAlertRuleDialog(
+        ruleId: ruleId,
+        onSuccess: _initialLoad,
       ),
     );
   }
